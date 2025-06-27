@@ -1,5 +1,4 @@
-var script = 
-`
+var script = `
 "Hey!"
 "It’s a watch."
 + A watch? ->watch
@@ -23,83 +22,132 @@ var script =
 END
 `
 
-var creatDialogueEngine = function (script,displayMessage,displayQuestion)
+var createDialogueEngine = function (script, displayMessage,displayQuestion) 
 {
     var self = {};
-    var storyItems;
+    var storyItems=undefined;
 
-    // transcrire le script en list
-    var scriptAsList = scriptList(script);
+    /////////////// Preparation ////////////////
+    // transcrire le script en une liste
 
-    function scriptList(script)
+    var scriptAsList = scriptToList(script);
+    function scriptToList(script) 
     {
         return script.split('\n');
     }
 
-    // console.log(script);
-
+    // transposer la liste de textes en objets
     storyItems = toObject(scriptAsList);
 
-    // list to object
-    function toObject(scriptAsList)
+    function toObject(scriptAsList) 
     {
-        var listOfObject = [];
-        for (let i = 0; i< script.length; i++) // faut changer script avec le bon truc
-        {
-            if (scriptAsList[i][0] == "=")
+        var listOfObjects = [];
+
+        for (let i = 0; i < scriptAsList.length; i++) 
             {
-                var formatedTexte = scriptAsList[i].replace("===","").scriptAsList[i].replace("===","");
-                listOfObject.push({s: formatedTexte});
-            }
+            if (scriptAsList[i][0] == "=") { //if is a scene
+                var formatedText = scriptAsList[i].replace("===","").replace("===","");
+                listOfObjects.push({s:formatedText});
+            }           
             else if (scriptAsList[i][0] == "+")
-            {
-                var splitedQuestion = scriptAsList[i].split('->');
+            {//if question
+                var splitedQuestion  = scriptAsList[i].split('->');
                 var formatedQuestion = splitedQuestion[0].substring(1).trim();
-                listOfObject.push({q:formatedQuestion, go:splitedQuestion[1]});
+                listOfObjects.push({q:formatedQuestion, go:splitedQuestion[1]});
             }
             else
-            {
-                var splitedMessage = scriptAsList[1].split('->');
-                listOfObject.push({m:splitedMessage[0].trim(), go :splitedMessage[1]})
+            { //un message
+                var splitedMessage = scriptAsList[i].split('->');
+                listOfObjects.push({m:splitedMessage[0].trim(), go:splitedMessage[1]});    
             }
         }
-        return listOfObject;
-        
+        return listOfObjects;
     }
 
-    function readStory(storyItems)
+    /////////////// Traitement ////////////
+
+    function readStory(storyItems, index) //index = titre chapitre
     {
-        for (let i = 0; i < storyItems.length; i++) 
+        if (!index)
         {
-            if (storyItems[i].m)
+            index = 0;
+        }
+        var i = index;
+
+        // for (let i = index; i < storyItems.length; i++)
+        {
+            if (storyItems[i].m || storyItems[i].m == "") 
             {
-                if (displayMessage)
+                if (displayMessage) 
                 {
                     displayMessage(storyItems[i]);
                 }
+                if (storyItems[i].go)
+                {
+                    goTo(storyItems[i].go);
+                    return'newChapitre';
+                }  
+                setTimeout(() =>
+                {
+                    readStory(storyItems, i+1);
+                }, 1000);
+
             }
-            else if (storyItems[i].q)
+            else if (storyItems[i].q) 
             {
-                displayQuestion(storyItems[i]);
+                if (displayQuestion) 
+                {
+                    displayQuestion(storyItems[i], self);
+                }
+
+                setTimeout(() =>
+                {
+                    readStory(storyItems, i+1);
+                }, 1000);
+                
             }
-            else if (storyItems[i].s)
+            else if (storyItems[i].s) 
             {
                 return 'waiting for choice';
-            }
-            
+            }   
         }
     }
 
-    function start()
+    function start() 
     {
         readStory(storyItems);
     }
 
+    function findIndex(chapitre)
+    {
+        for (let i = 0; i < storyItems.length; i++) 
+        {
+            if(storyItems[i].s == chapitre)
+            {
+                return i;
+            }           
+        }
+    }
+    function goTo(anchor) //anchor est le nom du chapitre
+    {
+        //fait passer au chapitre/question suivante, relance lecture du chap suivant
+        var index = findIndex(anchor);
+        readStory(storyItems, index + 1);
+    }
+    
+    function addText (message)
+    {
+        //afficher un message
+        displayMessage ({m:message});
+    }
+
+    self.addText = addText;
     self.start = start;
+    self.goTo = goTo;
     return self;
 }
 
-function displayMessage(data)
+function displayMessage(data) 
 {
     console.log(data);
     var domElement = document.createElement("div");
@@ -107,17 +155,45 @@ function displayMessage(data)
     document.body.appendChild(domElement);
 }
 
-function displayQuestion(data)
+function displayGivenReponse(data)
+{
+    var domElement = document.createElement("div");
+    domElement.style.backgroundColor = 'pinkk';
+    domElement.innerHTML = data.m;
+    console.log(displayGivenReponse);
+}
+
+var currentButtons = [];
+
+function displayQuestion(data, currentDialogue) 
 {
     console.log(data);
     var domElement = document.createElement("button");
+    currentButtons.push(domElement);
     domElement.innerHTML = data.q;
-    domElement.style.backgroundColor = 'red';
+    domElement.style.backgroundColor = 'pink';
     domElement.style.display = 'block';
     domElement.style.margin = '2px';
-    domElement.style.borderRadius = '5px';
+    domElement.style.borderRadius = '10px';
     document.body.appendChild(domElement);
+    
+    
+    function triggerButton (event)
+    {
+        console.log(data);
+        
+        for (let i = 0; i < currentButtons.length; i++) 
+            {
+                currentButtons[i].style.display = "none";
+            }
+            // alert("boutton pressed");
+            console.log(currentDialogue.goTo);
+            currentDialogue.addText("Vous répondu : " + data.q);
+            displayGivenReponse(data);
+            currentDialogue.goTo(data.go);
+        }
+        domElement.addEventListener("click", triggerButton);
 }
 
-var dialogue = creatDialogueEngine(script, displayMessage,displayQuestion);
+var dialogue = createDialogueEngine(script,displayMessage, displayQuestion );
 dialogue.start();
