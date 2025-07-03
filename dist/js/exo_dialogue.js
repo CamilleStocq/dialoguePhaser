@@ -1,199 +1,165 @@
-var script = `
-"Hey!"
-"It’s a watch."
-+ A watch? ->watch
-+ What is it for? ->forWhat
-===watch===
-"Yeah, it’s a watch. It tells the time."
-"My father gave it to me. Went through hell and back with him"
-+ What is it for? ->forWhat
-+ can I have it? ->give
-+ It's not vey usefull? ->angry
-===forWhat===
-"It tells time."
-"When to eat, sleep, wake up, work." ->end
-===give===
-"Sure, take it"
-"I cannot tell the time now" ->end
-===angry===
-"You are very rude"
-"Go Away" ->end
-===end===
-END
-`
+console.log(Phaser);
 
-var createDialogueEngine = function (script, displayMessage,displayQuestion) 
+var config = 
 {
-    var self = {};
-    var storyItems=undefined;
-
-    /////////////// Preparation ////////////////
-    // transcrire le script en une liste
-
-    var scriptAsList = scriptToList(script);
-    function scriptToList(script) 
+    type: Phaser.AUTO,
+    width:625,
+    height:520,
+    scene: 
     {
-        return script.split('\n');
+        preload:preload,
+        create:create,
+        update:update,
     }
+};
 
-    // transposer la liste de textes en objets
-    storyItems = toObject(scriptAsList);
+var game = new Phaser.Game(config);
 
-    function toObject(scriptAsList) 
-    {
-        var listOfObjects = [];
-
-        for (let i = 0; i < scriptAsList.length; i++) 
-            {
-            if (scriptAsList[i][0] == "=") { //if is a scene
-                var formatedText = scriptAsList[i].replace("===","").replace("===","");
-                listOfObjects.push({s:formatedText});
-            }           
-            else if (scriptAsList[i][0] == "+")
-            {//if question
-                var splitedQuestion  = scriptAsList[i].split('->');
-                var formatedQuestion = splitedQuestion[0].substring(1).trim();
-                listOfObjects.push({q:formatedQuestion, go:splitedQuestion[1]});
-            }
-            else
-            { //un message
-                var splitedMessage = scriptAsList[i].split('->');
-                listOfObjects.push({m:splitedMessage[0].trim(), go:splitedMessage[1]});    
-            }
-        }
-        return listOfObjects;
-    }
-
-    /////////////// Traitement ////////////
-
-    function readStory(storyItems, index) //index = titre chapitre
-    {
-        if (!index)
-        {
-            index = 0;
-        }
-        var i = index;
-
-        // for (let i = index; i < storyItems.length; i++)
-        {
-            if (storyItems[i].m || storyItems[i].m == "") 
-            {
-                if (displayMessage) 
-                {
-                    displayMessage(storyItems[i]);
-                }
-                if (storyItems[i].go)
-                {
-                    goTo(storyItems[i].go);
-                    return'newChapitre';
-                }  
-                setTimeout(() =>
-                {
-                    readStory(storyItems, i+1);
-                }, 1000);
-
-            }
-            else if (storyItems[i].q) 
-            {
-                if (displayQuestion) 
-                {
-                    displayQuestion(storyItems[i], self);
-                }
-
-                setTimeout(() =>
-                {
-                    readStory(storyItems, i+1);
-                }, 1000);
-                
-            }
-            else if (storyItems[i].s) 
-            {
-                return 'waiting for choice';
-            }   
-        }
-    }
-
-    function start() 
-    {
-        readStory(storyItems);
-    }
-
-    function findIndex(chapitre)
-    {
-        for (let i = 0; i < storyItems.length; i++) 
-        {
-            if(storyItems[i].s == chapitre)
-            {
-                return i;
-            }           
-        }
-    }
-    function goTo(anchor) //anchor est le nom du chapitre
-    {
-        //fait passer au chapitre/question suivante, relance lecture du chap suivant
-        var index = findIndex(anchor);
-        readStory(storyItems, index + 1);
-    }
+function preload()
+{
+    this.load.image('background', '/assets/Sprites/ocean.jpg');
+    this.load.image('dialogueBox', '/assets/Sprites/diaBox.png');
+    this.load.image('mood','/assets/Sprites/Label.png' );
+    this.load.image('conv','/assets/Sprites/Label1.png' );
+    this.load.image('play','/assets/Sprites/PlaySea.png' )
+    this.load.spritesheet("poulpe", '/assets/Sprites/HappyOctopuss.png', {frameWidth: 100, frameHeight: 100});
+    this.load.spritesheet("poulpeSad", '/assets/Sprites/SADoctopuss.png', {frameWidth: 100, frameHeight: 100});
+    this.load.spritesheet("poulpeShoocked", '/assets/Sprites/SHOOCKoctopuss.png', {frameWidth: 100, frameHeight: 100});
+    this.load.audio('startSound' ,'/assets/sound/Menu.wav');
     
-    function addText (message)
-    {
-        //afficher un message
-        displayMessage ({m:message});
-    }
-
-    self.addText = addText;
-    self.start = start;
-    self.goTo = goTo;
-    return self;
+    // this.load.video('intro', '/assets/video/intro.mp4' )
 }
 
-function displayMessage(data) 
+function create()
 {
-    console.log(data);
-    var domElement = document.createElement("div");
-    domElement.innerHTML = data.m;
-    document.body.appendChild(domElement);
-}
+    var monBG = this.add.image(225,225, 'background');
+    var maDiaBox = this.add.image(450,250, 'dialogueBox');
+    maDiaBox.setScale(1.8);
 
-function displayGivenReponse(data)
-{
-    var domElement = document.createElement("div");
-    domElement.style.backgroundColor = 'pinkk';
-    domElement.innerHTML = data.m;
-    console.log(displayGivenReponse);
-}
+    var maMoodBoard = this.add.image(450, 55, 'mood');
+    maMoodBoard.setScale(0.4);
 
-var currentButtons = [];
+    var boutonClick = this.add.image(450,425, 'conv');
+    boutonClick.setScale(0.2);
 
-function displayQuestion(data, currentDialogue) 
-{
-    console.log(data);
-    var domElement = document.createElement("button");
-    currentButtons.push(domElement);
-    domElement.innerHTML = data.q;
-    domElement.style.backgroundColor = 'pink';
-    domElement.style.display = 'block';
-    domElement.style.margin = '2px';
-    domElement.style.borderRadius = '10px';
-    document.body.appendChild(domElement);
+    var boutonClick2 = this.add.image(450,463, 'conv');
+    boutonClick2.setScale(0.2);
+
+    var boutonClick3 = this.add.image(450,500, 'conv');
+    boutonClick3.setScale(0.2);
+
+    var boutonQuestion = this.add.image(300,250, 'play');
     
     
-    function triggerButton (event)
+    var monAnim = this.anims.create({
+        key:"octopus",
+        frameRate: 4,
+        frames : this.anims.generateFrameNumbers("poulpe", { start:0, end:3 }),
+        repeat :-1 // pour une boucle infinie 
+
+    });
+
+    var monAnimSad = this.anims.create({
+        key:"Sadoctopus",
+        frameRate: 4,
+        frames : this.anims.generateFrameNumbers("poulpeSad", { start:0, end:3 }),
+        repeat :-1 // pour une boucle infinie 
+
+    });
+
+    var monAnimShoocked = this.anims.create({
+        key:"ShoockOctopus",
+        frameRate: 4,
+        frames : this.anims.generateFrameNumbers("poulpeShoocked", { start:0, end:3 }),
+        repeat :-1 // pour une boucle infinie 
+
+    });
+      
+      
+    var poulpe = this.add.sprite(150,140, "poulpe");
+    poulpe.play("octopus");
+    poulpe.setScale(2.8);
+
+    
+    startSound = this.sound.add('startSound');
+    startSound.play();
+
+    boutonClick.setInteractive();
+    boutonClick.on('pointerdown', function(pointer) 
     {
-        console.log(data);
+        console.log("clicked1");
+        poulpe.play("Sadoctopus");
+    });
+
+    boutonClick2.setInteractive();
+    boutonClick2.on('pointerdown', function(pointer) 
+    {
+        console.log("clicked2");
+        poulpe.play("octopus");
+    });
+
+    boutonClick3.setInteractive();
+    boutonClick3.on('pointerdown', function(pointer) 
+    {
+        console.log("clicked3");
+        poulpe.play("ShoockOctopus");
+    });
         
-        for (let i = 0; i < currentButtons.length; i++) 
-            {
-                currentButtons[i].style.display = "none";
-            }
-            // alert("boutton pressed");
-            console.log(currentDialogue.goTo);
-            currentDialogue.addText("Vous répondu : " + data.q);
-            displayGivenReponse(data);
-            currentDialogue.goTo(data.go);
-        }
-        domElement.addEventListener("click", triggerButton);
-}
 
-var dialogue = createDialogueEngine(script,displayMessage, displayQuestion );
-dialogue.start();
+
+    var emotionsHappy = this.add.text(410, 40, 'HAPPY', 
+        { fontFamily: 'Arial', fontSize: 25, color: '#ffffff',wordWrap: { width: 600 }, });
+            
+    // var emotionsSad = this.add.text(410, 40, 'SAD', 
+    //         { fontFamily: 'Arial', fontSize: 25, color: '#ffffff',wordWrap: { width: 600 }, });
+    // var emotionsShoock = this.add.text(410, 40, 'HAPPY', 
+    //         { fontFamily: 'Arial', fontSize: 25, color: '#ffffff',wordWrap: { width: 600 }, });
+            
+
+
+     var rep1 = this.add.text(400, 413, 'reponse 1', 
+        { fontFamily: 'Arial', fontSize: 20, color: '#ffffff',wordWrap: { width: 600 }, });
+                
+    var rep2 = this.add.text(400, 450, 'reponse 2', 
+        { fontFamily: 'Arial', fontSize: 20, color: '#ffffff',wordWrap: { width: 600 }, });
+                    
+    var rep3 = this.add.text(400, 488, 'reponse 3', 
+        { fontFamily: 'Arial', fontSize: 20, color: '#ffffff',wordWrap: { width: 600 }, });
+                        
+    var laQuestion = this.add.text(350, 100, 'je vous pose une question super interessante car je suis un pouple super interessant', 
+        { fontFamily: 'Arial', fontSize: 15, color: '#40c0c0',wordWrap: { width: 220 }, });   
+
+    var playGame = this.add.image(225,225, 'background');
+    boutonQuestion.setDepth(8);
+                            
+    boutonQuestion.setInteractive();
+    boutonQuestion.setDepth(8);
+    boutonQuestion.setScale(0.5);
+    boutonQuestion.on('pointerdown', function(pointer) 
+        {
+        console.log("clicked play");
+        playAnim.play();
+        boutonQuestion.destroy();
+        TitreJeu.destroy();
+        });
+                        
+    var playAnim = this.tweens.add({
+        targets: playGame,
+        alpha:0,
+        duration: 2000,
+        ease: 'Power2',
+        // yoyo : true,
+        loop: 0,
+        paused: true
+        });
+        
+        // playAnim.play();
+
+    var TitreJeu = this.add.text(35, 100, 'Welcome to the POULPY TALK', 
+        { fontFamily: 'Arial', fontSize: 40, color: '#ffffff',wordWrap: { width: 600 }, });
+}
+                        
+function update()
+{
+    
+}
