@@ -2,6 +2,7 @@ import{createDialogueEngine} from "./dialogue.js"
 
 console.log(Phaser);
 
+var questionPanels= [];
 var config = 
 {
     type: Phaser.AUTO,
@@ -19,86 +20,73 @@ var game = new Phaser.Game(config);
 
 var script = `
 Heyyy ! Welcome to the reef !!!!
-How are you, beautiful land creature?
-+ Meh… not really well -> Chapitre 3
-+ I’m good! -> Chapitre 2
-+ I’m here for the tentacles  -> Chapitre 4
+How are you, beautiful creature?
++ Meh… not really well ->Chapitre 3
++ I’m good! ->Chapitre 2
++ I’m here for the tentacles ->Chapitre 4
 
-=== Chapitre 2 ===
-Yayyy! Happy float -> Chapitre 5
 
-=== Chapitre 3 ===
-Oh no… wanna talk or ink someone? -> Chapitre 5
+===Chapitre 2===
+Yayyy! Happy float ->Chapitre 5
 
-=== Chapitre 4 ===
-A tentacle admirer? We might just get along… -> Chapitre 5
+===Chapitre 3===
+Oh no… wanna talk or ink someone? 
 
-=== Chapitre 5 ===
++ Are you crazy ??? ->Chapitre 15
++ Nooo, just tell me something funny ->Chapitre 5
++ i like the idea but i prefer you use your tentacles ->Chapitre 4
+
+===Chapitre 15===
+Meeee ??? NO just something happened to me. ->Chapitre 5
+
+===Chapitre 4===
+A tentacle admirer? We might just get along… ->Chapitre 5
+
+===Chapitre 5===
 Can I tell you something deep? 
 Like… deeeep like the Titanic?"
-+ Yes, go ahead  -> Chapitre 6
-+ No thanks -> Chapitre 7
-+ Only if it’s funny -> Chapitre 8
++ No thanks ->Chapitre 7
++ Yes, go ahead  ->Chapitre 6
++ Only if it’s funny ->Chapitre 8
 
-=== Chapitre 6 ===
-I once saw a jellyfish write poetry with its stings… It was electric. -> Chapitre 9
+===Chapitre 6===
+I once saw a jellyfish write poetry with its stings… It was electric. ->Chapitre 9
 
-=== Chapitre 7 ===
-I get it. Not everyone’s ready for deep sea confessions. -> Chapitre 9
+===Chapitre 7===
+I get it. Not everyone’s ready for deep sea confessions. ->Chapitre 9
 
-=== Chapitre 8 ===
-I have 8 legs, but no sense of humour. Please laugh anyway -> Chapitre 9
+===Chapitre 8===
+I have 8 legs, but no sense of humour. Please laugh anyway ->Chapitre 9
 
-=== Chapitre 9 ===
-+ Haha you’re actually funny -> Chapitre 10
-+ that wasn’t funny  -> Chapitre 11
-+ You’re so weird, I like you  -> Chapitre 12
+===Chapitre 9===
++ Haha youre actually funny ->Chapitre 10
++ that wasnt funny ->Chapitre 11
++ Youre so weird, I like you ->Chapitre 12
 
-=== Chapitre 10 ===
-Yesss! I made a human smile -> Chapitre 13
+===Chapitre 10===
+Yesss! I made a human smile ->Chapitre 13
 
-=== Chapitre 11 ===
-Ouch… That stings more than a sea urchin. -> Chapitre 13
+===Chapitre 11===
+Ouch… That stings more than a sea urchin. ->Chapitre 13
 
-=== Chapitre 12 ===
-Weird loves weird. You’re my favourite air-breather -> Chapitre 13
-⸻
-=== Chapitre 13 ===
-Time to float away… but I’ll ink about you 
+===Chapitre 12===
+Weird loves weird. You’re my favourite air-breather ->Chapitre 13
+
+===Chapitre 13===
+Time to float away… but Ill ink about you 
 Be kind, be weird, be you.
 
-+ Bye friend  -> End
-+ Bye… my friend  -> End
-+ Can I keep you? -> Chapitre 14
-⸻
-=== Chapitre 14 ===
-I’m always just a ripple away. -> End
-===end===
-END
++ Bye… my friend  ->End
++ Bye friend  ->End
++ Can I keep you? ->Chapitre 14
+
+===Chapitre 14===
+Im always just a ripple away. ->End
+
+===End===
+Bye Bye buddie
 ` 
-// var script = `
-// "Hey!"
-// "It’s a watch."
-// + A watch? ->watch
-// + What is it for? ->forWhat
-// ===watch===
-// "Yeah, it’s a watch. It tells the time."
-// "My father gave it to me. Went through hell and back with him"
-// + What is it for? ->forWhat
-// + can I have it? ->give
-// + It's not vey usefull? ->angry
-// ===forWhat===
-// "It tells time."
-// "When to eat, sleep, wake up, work." ->end
-// ===give===
-// "Sure, take it"
-// "I cannot tell the time now" ->end
-// ===angry===
-// "You are very rude"
-// "Go Away" ->end
-// ===end===
-// END
-// `
+var chapterList = [];
 
 function preload()
 {
@@ -165,15 +153,17 @@ function create()
     poulpe.play("octopus");
     poulpe.setScale(2.8);
 
-    
-    // var startSound = this.sound.add('startSound');
-    // startSound.play();
-
     boutonClick.setInteractive();
     boutonClick.on('pointerdown', function(pointer) 
     {
         console.log("clicked1");
         poulpe.play("Sadoctopus");
+        emotionsState.text = "SAD";
+
+        if (chapterList[0]) {
+            console.log ("chapterList:", chapterList[0]);
+            dialogueEngine.goTo(chapterList[0]);
+            resetButton();}
     });
 
     boutonClick2.setInteractive();
@@ -181,6 +171,13 @@ function create()
     {
         console.log("clicked2");
         poulpe.play("octopus");
+        emotionsState.text = "HAPPY";
+     
+        if (chapterList[1]) {
+            console.log ("chapterList:", chapterList[1]);
+            dialogueEngine.goTo(chapterList[1]);
+            resetButton();
+    }       
     });
 
     boutonClick3.setInteractive();
@@ -188,20 +185,20 @@ function create()
     {
         console.log("clicked3");
         poulpe.play("ShoockOctopus");
+        emotionsState.text = "SHOOCK";
+
+        if (chapterList[2]) 
+        {
+            console.log ("chapterList:", chapterList[2]);
+            dialogueEngine.goTo(chapterList[2]);
+            resetButton();
+        }        
     });
-        
 
 
-    var emotionsHappy = this.add.text(395, 28, 'HAPPY', 
-        { fontFamily: 'Impact', fontSize: 45, color: '#168d8d',wordWrap: { width: 600 }, });
-            
-    // var emotionsSad = this.add.text(410, 40, 'SAD', 
-    //         { fontFamily: 'Impact', fontSize: 25, color: '#ffffff',wordWrap: { width: 600 }, });
-    // var emotionsShoock = this.add.text(410, 40, 'HAPPY', 
-    //         { fontFamily: 'Impact', fontSize: 25, color: '#ffffff',wordWrap: { width: 600 }, });
-            
-
-
+    var emotionsState = this.add.text(395, 35, 'HAPPY', 
+        { fontFamily: 'Impact', fontSize: 35, color: '#168d8d',wordWrap: { width: 600 }, });
+   
     var rep1 = this.add.text(385, 416, '', 
         { fontFamily: 'Impact', fontSize: 13, color: '#ffffff',wordWrap: { width: 600 }, });
                 
@@ -211,10 +208,9 @@ function create()
     var rep3 = this.add.text(385, 492, '', 
         { fontFamily: 'Impact', fontSize: 13, color: '#ffffff',wordWrap: { width: 600 }, });
                         
-    var laQuestion = this.add.text(345, 100, '', 
-        { fontFamily: 'Impact', fontSize: 17, color: '#168d8d',wordWrap: { width: 220 }, });   
-
-   
+    var laQuestion = this.add.text(345, 80, '', 
+        { fontFamily: 'Impact', fontSize: 13, color: '#168d8d',wordWrap: { width: 220 }, });   
+  
     var playGame = this.add.image(225,225, 'background');
     boutonQuestion.setDepth(8);
                             
@@ -223,13 +219,14 @@ function create()
     boutonQuestion.setScale(0.5);
     boutonQuestion.on('pointerdown', function(pointer) 
         {
-        console.log("clicked play");
-        playAnim.play();
-        boutonQuestion.destroy();
-        TitreJeu.destroy();
+            console.log("clicked play"),
+            playAnim.play(),
+            boutonQuestion.destroy(),
+            TitreJeu.destroy()
         });
                         
-    var playAnim = this.tweens.add({
+    var playAnim = this.tweens.add
+    ({
         targets: playGame,
         alpha:0,
         duration: 2000,
@@ -237,7 +234,7 @@ function create()
         // yoyo : true,
         loop: 0,
         paused: true
-        });
+    });
         
         // playAnim.play();
 
@@ -250,6 +247,10 @@ function create()
         rep1.setVisible = false;
         rep2.setVisible = false;
         rep3.setVisible = false;
+
+        currentTarget = 0;
+        chapterList = [];
+        
     }
 
     var displayMessage = function (data)
@@ -265,15 +266,15 @@ function create()
 
         if(currentTarget == 0)
         {
-            rep1.text += data.q;
+            rep1.text = data.q;
         }
         else if(currentTarget == 1)
         {
-            rep2.text += data.q;
+            rep2.text = data.q;
         }
         else if(currentTarget == 2)
         {
-            rep3.text += data.q;
+            rep3.text = data.q;
         }
 
         laQuestion.setVisible = true;
@@ -281,8 +282,9 @@ function create()
         rep2.setVisible = true;
         rep3.setVisible = true;
 
-        currentTarget++;
+        chapterList[currentTarget] = data.go;
 
+        currentTarget++;
     }
 
     var dialogueEngine = createDialogueEngine(script, displayMessage,displayQuestion )
