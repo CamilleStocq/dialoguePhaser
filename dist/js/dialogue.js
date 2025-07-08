@@ -82,7 +82,7 @@ export var createDialogueEngine = function (script, displayMessage, displayQuest
                 }
                 setTimeout(() => {
                     readStory(storyItems, i+1)
-                }, 800);
+                }, 1000);
             }
             else if (storyItems[i].q) {
                 if (displayQuestion){
@@ -90,7 +90,7 @@ export var createDialogueEngine = function (script, displayMessage, displayQuest
                 }
                 setTimeout(() => {
                     readStory(storyItems, i+1)
-                }, 800);
+                }, 1000);
             }
             else if (storyItems[i].s){
                 return 'Waiting for choice'
